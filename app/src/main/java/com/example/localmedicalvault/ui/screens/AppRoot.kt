@@ -38,6 +38,15 @@ class VaultVM(app: Application): AndroidViewModel(app) {
     private val db = AppDatabase.get(app)
     val patients = repo.observePatients().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
     val allDocs = repo.allDocuments().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun addOrUpdatePatient(id:Long?,name:String,dob:String,notes:String,rel:String)=viewModelScope.launch {
+        if(id==null) repo.addPatient(PatientEntity(fullName=name,dateOfBirth=dob,notes=notes,relationType=rel))
+        else repo.updatePatient(PatientEntity(id=id,fullName=name,dateOfBirth=dob,notes=notes,relationType=rel))
+    }
+    fun visitsByPatient(patientId:Long)=repo.visitsByPatient(patientId)
+    fun addVisit(patientId:Long,date:String,doctor:String,clinic:String,reason:String,notes:String)=viewModelScope.launch {
+        repo.addVisit(VisitEntity(patientId=patientId,visitDate=date,doctor=doctor,clinic=clinic,reason=reason,notes=notes))
+    }
     fun addDocument(patientId:Long,title:String,cat:DocumentCategory,date:String,doctor:String,clinic:String,tags:String,notes:String,uri:Uri?,orig:String?)=viewModelScope.launch { if(uri==null) return@launch; val (path,intName,type)=storage.importToPrivateStorage(uri,orig); repo.addDocument(MedicalDocumentEntity(patientId=patientId,title=title,category=cat,documentDate=date,doctorName=doctor,clinic=clinic,tags=tags,notes=notes,localPath=path,originalFileName=orig?:"",internalFileName=intName,fileType=type)) }
     fun deleteDocument(doc:MedicalDocumentEntity)=viewModelScope.launch{ storage.deleteLocalFile(doc.localPath); repo.deleteDocument(doc) }
     suspend fun search(q:String,pid:Long?,cat:DocumentCategory?,from:String,to:String)=repo.search(q,pid,cat,from,to)
