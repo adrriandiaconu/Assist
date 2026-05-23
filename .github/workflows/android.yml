@@ -30,16 +30,33 @@ jobs:
             "platform-tools" \
             "platforms;android-35" \
             "build-tools;35.0.0"
-          sdkmanager --list_installed
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Unit tests
-        run: gradle test --stacktrace --info --no-daemon
+      - name: Compile Debug Kotlin (info)
+        run: gradle :app:compileDebugKotlin --no-daemon --stacktrace --info
 
-      - name: Assemble debug APK
-        run: gradle assembleDebug --stacktrace --info --no-daemon
+      - name: Compile Release Kotlin (info)
+        run: gradle :app:compileReleaseKotlin --no-daemon --stacktrace --info
+
+      - name: Compile Debug Kotlin (debug fallback)
+        if: failure()
+        run: gradle :app:compileDebugKotlin --no-daemon --debug || true
+
+      - name: Build diagnostics (always)
+        if: always()
+        run: |
+          echo "==== app/build files ===="
+          find app/build -type f | sort || true
+          echo "==== app/build logs/reports ===="
+          find app/build -type f \( -name "*.log" -o -name "*.txt" -o -name "*.html" \) -print || true
+
+      - name: Unit tests
+        run: gradle test --no-daemon --stacktrace --info
+
+      - name: Assemble Debug
+        run: gradle assembleDebug --no-daemon --stacktrace --info
 
       - name: Upload APK artifact
         if: success()
