@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -79,7 +80,15 @@ fun AppRoot(vm: VaultVM = viewModel()) {
 
 @Composable
 fun BottomNavBar(currentTab: String, onTabSelected: (String) -> Unit) {
-    Row(modifier = Modifier.fillMaxWidth().background(Color.White).padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .background(Color.White)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         NavItem("Home", Icons.Rounded.Home, currentTab == "home") { onTabSelected("home") }
         NavItem("Docs", Icons.Rounded.Description, currentTab == "documents") { onTabSelected("documents") }
         Box(modifier = Modifier.size(56.dp).offset(y = (-12).dp).clip(RoundedCornerShape(16.dp)).background(Color(0xFF0F172A)).clickable { onTabSelected("add") }, contentAlignment = Alignment.Center) { Icon(Icons.Rounded.Add, contentDescription = "Add", tint = Color.White, modifier = Modifier.size(32.dp)) }
