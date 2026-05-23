@@ -26,9 +26,6 @@ import com.example.localmedicalvault.storage.DocumentStorage
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.io.File
 
 sealed class Screen { data object Home:Screen(); data class PatientDetail(val id:Long):Screen(); data class PatientForm(val id:Long?):Screen(); data class DocForm(val patientId:Long,val docId:Long?):Screen(); data class DocDetail(val id:Long):Screen(); data class VisitForm(val patientId:Long):Screen(); data class Visits(val patientId:Long):Screen(); data object Search:Screen(); data object Settings:Screen() }
@@ -58,9 +55,7 @@ class VaultVM(app: Application): AndroidViewModel(app) {
 
 @Composable fun AppRoot(vm: VaultVM = viewModel()) {
     var screen by remember { mutableStateOf<Screen>(Screen.Home) }
-    val context = LocalContext.current
     val patients by vm.patients.collectAsState()
-    val docs by vm.allDocs.collectAsState()
     when(val s=screen) {
         Screen.Home -> Scaffold(floatingActionButton = { FloatingActionButton(onClick={screen=Screen.PatientForm(null)}){Text("+")}}) { p->
             Column(Modifier.padding(p).padding(16.dp)) { Text("Family Medical Vault", style=MaterialTheme.typography.headlineSmall); Button(onClick={screen=Screen.Search}){Text("Search")}; Button(onClick={screen=Screen.Settings}){Text("Settings")}
@@ -93,7 +88,7 @@ class VaultVM(app: Application): AndroidViewModel(app) {
 }
 @Composable private fun VisitFormScreen(patientId:Long, vm:VaultVM, onDone:()->Unit){ var date by remember{mutableStateOf("")}; var doctor by remember{mutableStateOf("")}; var clinic by remember{mutableStateOf("")}; var reason by remember{mutableStateOf("")}; var notes by remember{mutableStateOf("")}; Column(Modifier.padding(16.dp)){ Text("Add visit"); OutlinedTextField(date,{date=it},label={Text("Visit date")}); OutlinedTextField(doctor,{doctor=it},label={Text("Doctor")}); OutlinedTextField(clinic,{clinic=it},label={Text("Clinic")}); OutlinedTextField(reason,{reason=it},label={Text("Reason")}); OutlinedTextField(notes,{notes=it},label={Text("Notes")}); Button(onClick={vm.addVisit(patientId,date,doctor,clinic,reason,notes); onDone()}){Text("Save")}}
 }
-@Composable private fun SearchScreen(vm:VaultVM, onBack:()->Unit, onOpen:(Long)->Unit){ var q by remember{mutableStateOf("")}; var results by remember{mutableStateOf(listOf<MedicalDocumentEntity>())}; var from by remember{mutableStateOf("")}; var to by remember{mutableStateOf("")}; Column(Modifier.padding(16.dp)){ Text("Search documents"); OutlinedTextField(q,{q=it},label={Text("Search text")}); OutlinedTextField(from,{from=it},label={Text("From date")}); OutlinedTextField(to,{to=it},label={Text("To date")}); Button(onClick={ kotlinx.coroutines.GlobalScope.launch(kotlinx.coroutines.Dispatchers.Main) { results = vm.search(q,null,null,from,to) } }){Text("Search")}; LazyColumn{ items(results){ Text(it.title, modifier=Modifier.clickable{onOpen(it.id)}.padding(8.dp)) } }; Button(onClick=onBack){Text("Back")}}
+@Composable private fun SearchScreen(vm:VaultVM, onBack:()->Unit, onOpen:(Long)->Unit){ val scope = rememberCoroutineScope(); var q by remember{mutableStateOf("")}; var results by remember{mutableStateOf(listOf<MedicalDocumentEntity>())}; var from by remember{mutableStateOf("")}; var to by remember{mutableStateOf("")}; Column(Modifier.padding(16.dp)){ Text("Search documents"); OutlinedTextField(q,{q=it},label={Text("Search text")}); OutlinedTextField(from,{from=it},label={Text("From date")}); OutlinedTextField(to,{to=it},label={Text("To date")}); Button(onClick={ scope.launch { results = vm.search(q,null,null,from,to) } }){Text("Search")}; LazyColumn{ items(results){ Text(it.title, modifier=Modifier.clickable{onOpen(it.id)}.padding(8.dp)) } }; Button(onClick=onBack){Text("Back")}}
 }
 @Composable private fun SettingsScreen(vm:VaultVM, onBack:()->Unit){ var msg by remember{mutableStateOf("")}; val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()){ uri -> if(uri!=null) vm.exportBackup(uri){ok-> msg= if(ok)"Backup exported" else "Backup failed" } }
  Column(Modifier.padding(16.dp)){ Text("Settings"); Text("App lock: coming in V2"); Text("Restore: placeholder for V2"); Button(onClick={picker.launch(null)}){Text("Export backup")}; Text(msg); Button(onClick=onBack){Text("Back")}}
