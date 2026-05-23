@@ -1,0 +1,66 @@
+name: Android CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      ANDROID_HOME: /usr/local/lib/android/sdk
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept licenses and install SDK components
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager --install \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Compile Debug Kotlin (info)
+        run: gradle :app:compileDebugKotlin --no-daemon --stacktrace --info
+
+      - name: Compile Release Kotlin (info)
+        run: gradle :app:compileReleaseKotlin --no-daemon --stacktrace --info
+
+      - name: Compile Debug Kotlin (debug fallback)
+        if: failure()
+        run: gradle :app:compileDebugKotlin --no-daemon --debug || true
+
+      - name: Build diagnostics (always)
+        if: always()
+        run: |
+          echo "==== app/build files ===="
+          find app/build -type f | sort || true
+          echo "==== app/build logs/reports ===="
+          find app/build -type f \( -name "*.log" -o -name "*.txt" -o -name "*.html" \) -print || true
+
+      - name: Unit tests
+        run: gradle test --no-daemon --stacktrace --info
+
+      - name: Assemble Debug
+        run: gradle assembleDebug --no-daemon --stacktrace --info
+
+      - name: Upload APK artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
