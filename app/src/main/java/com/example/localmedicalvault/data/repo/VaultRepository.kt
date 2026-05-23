@@ -17,14 +17,14 @@ class VaultRepository(context: Context) {
     suspend fun updatePatient(patient: PatientEntity) = patients.update(patient)
     suspend fun deletePatient(patient: PatientEntity) = patients.delete(patient)
 
-    fun documentsByPatient(patientId: Long) = documents.byPatient(patientId)
+    fun documentsByPatient(patientId: Long): Flow<List<MedicalDocumentEntity>> = documents.byPatient(patientId)
     fun allDocuments() = documents.all()
     suspend fun addDocument(document: MedicalDocumentEntity) = documents.insert(document)
     suspend fun updateDocument(document: MedicalDocumentEntity) = documents.update(document)
     suspend fun deleteDocument(document: MedicalDocumentEntity) = documents.delete(document)
     suspend fun search(q: String, patientId: Long?, category: DocumentCategory?, from: String, to: String) = documents.search("%$q%", patientId, category, from, to)
 
-    fun visitsByPatient(patientId: Long) = visits.byPatient(patientId)
+    fun visitsByPatient(patientId: Long): Flow<List<VisitEntity>> = visits.byPatient(patientId)
     suspend fun addVisit(v: VisitEntity) = visits.insert(v)
     suspend fun updateVisit(v: VisitEntity) = visits.update(v)
     suspend fun deleteVisit(v: VisitEntity) = visits.delete(v)

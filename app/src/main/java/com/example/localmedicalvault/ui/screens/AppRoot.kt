@@ -45,8 +45,8 @@ class VaultVM(app: Application): AndroidViewModel(app) {
     }
     fun deleteDocument(doc:MedicalDocumentEntity)=viewModelScope.launch{ storage.deleteLocalFile(doc.localPath); repo.deleteDocument(doc) }
     fun addVisit(patientId:Long,date:String,doctor:String,clinic:String,reason:String,notes:String)=viewModelScope.launch{ repo.addVisit(VisitEntity(patientId=patientId,visitDate=date,doctor=doctor,clinic=clinic,reason=reason,notes=notes)) }
-    suspend fun visitsByPatient(patientId:Long)=repo.visitsByPatient(patientId)
-    suspend fun docsByPatient(patientId:Long)=repo.documentsByPatient(patientId)
+    fun visitsByPatient(patientId:Long)=repo.visitsByPatient(patientId)
+    fun docsByPatient(patientId:Long)=repo.documentsByPatient(patientId)
     suspend fun patient(id:Long)=repo.getPatient(id)
     suspend fun doc(id:Long)=db.documentDao().getById(id)
     fun exportBackup(uri:Uri,onDone:(Boolean)->Unit)=viewModelScope.launch{ onDone(BackupManager(getApplication(),db).export(uri)) }

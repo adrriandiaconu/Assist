@@ -14,10 +14,14 @@ jobs:
           java-version: '17'
       - uses: android-actions/setup-android@v3
       - uses: gradle/actions/setup-gradle@v4
-      - name: Test
-        run: gradle test
-      - name: Assemble Debug
-        run: gradle assembleDebug
+      - name: Compile Debug Kotlin (verbose)
+        run: gradle :app:compileDebugKotlin --stacktrace --info --no-daemon
+      - name: Compile Release Kotlin (verbose)
+        run: gradle :app:compileReleaseKotlin --stacktrace --info --no-daemon
+      - name: Unit tests (verbose)
+        run: gradle test --stacktrace --info --no-daemon
+      - name: Assemble Debug (verbose)
+        run: gradle assembleDebug --stacktrace --info --no-daemon
       - name: Upload APK
         if: success()
         uses: actions/upload-artifact@v4
