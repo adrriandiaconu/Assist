@@ -1,1 +1,6 @@
-<resources><style name="Theme.LocalMedicalVault" parent="Theme.Material3.DayNight.NoActionBar"/></resources>
+<resources>
+    <style name="Theme.LocalMedicalVault" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
+</resources>
