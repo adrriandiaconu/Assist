@@ -5,6 +5,7 @@ import com.example.localmedicalvault.data.local.DocumentCategory
 import com.example.localmedicalvault.data.local.MedicalDocumentEntity
 import com.example.localmedicalvault.data.local.PatientEntity
 import com.example.localmedicalvault.domain.filterDocuments
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.junit.Assert.*
 import org.junit.Test
