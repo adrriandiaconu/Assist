@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -103,19 +104,38 @@ class VaultVM(app: Application) : AndroidViewModel(app) {
 fun AppRoot(vm: VaultVM = viewModel()) {
     var currentTab by remember { mutableStateOf("home") }
     var selectedDocId by remember { mutableStateOf<Long?>(null) }
+    var showingAddPatientForm by remember { mutableStateOf(false) }
     val patients by vm.patients.collectAsState()
     val docs by vm.allDocs.collectAsState()
 
     Scaffold(bottomBar = { if (selectedDocId == null) BottomNavBar(currentTab) { currentTab = it } }, containerColor = Color(0xFFF8FAFC)) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .consumeWindowInsets(paddingValues)) {
             if (selectedDocId != null) {
                 DocumentDetailScreen(id = selectedDocId!!, vm = vm, onBack = { selectedDocId = null })
+            } else if (showingAddPatientForm) {
+                PatientFormScreen(
+                    id = null,
+                    vm = vm,
+                    onDone = { showingAddPatientForm = false },
+                    padding = PaddingValues(0.dp)
+                )
             } else {
                 when (currentTab) {
-                    "home" -> HomeScreen(PaddingValues(0.dp), patients, docs, onAdd = { currentTab = "add" }, onOpenDoc = { selectedDocId = it }, onGoDocs = { currentTab = "documents" })
+                    "home" -> HomeScreen(
+                        PaddingValues(0.dp),
+                        patients,
+                        docs,
+                        onAdd = { currentTab = "add" },
+                        onAddMember = { showingAddPatientForm = true },
+                        onOpenDoc = { selectedDocId = it },
+                        onGoDocs = { currentTab = "documents" }
+                    )
                     "documents" -> DocumentsListScreen(PaddingValues(0.dp), docs, patients, onOpen = { selectedDocId = it })
                     "add" -> AddDocumentWizard(PaddingValues(0.dp), vm, patients, onFinish = { currentTab = "documents" })
-                    "search" -> SearchScreen(PaddingValues(0.dp), vm, docs, onOpen = { selectedDocId = it })
+                    "search" -> SearchScreen(PaddingValues(0.dp), vm, docs, patients, onOpen = { selectedDocId = it })
                     "settings" -> SettingsScreen(PaddingValues(0.dp), vm)
                 }
             }

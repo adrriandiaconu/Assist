@@ -17,6 +17,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -31,6 +32,7 @@ fun HomeScreen(
     patients: List<PatientEntity>,
     docs: List<MedicalDocumentEntity>,
     onAdd: () -> Unit,
+    onAddMember: () -> Unit,
     onOpenDoc: (Long) -> Unit,
     onGoDocs: () -> Unit,
 ) {
@@ -78,27 +80,49 @@ fun HomeScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text("Family", style = MaterialTheme.typography.titleMedium)
-                Text("${patients.size} members", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextButton(onClick = onAddMember, contentPadding = PaddingValues(0.dp)) {
+                        Text("Add member")
+                    }
+                    Text("${patients.size} members", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
             }
         }
 
         item {
-            val rows = (patients.size + 1) / 2
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                modifier = Modifier.height((rows * 100).dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(patients.size) { i ->
-                    val p = patients[i]
-                    Card {
-                        Column(Modifier.padding(12.dp)) {
-                            Text(p.fullName, style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                "${p.relationType} · ${p.dateOfBirth.ifBlank { "Age not set" }}",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
+            if (patients.isEmpty()) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text("No family members yet", style = MaterialTheme.typography.titleMedium)
+                        Text("Add your first family member to start organizing documents.")
+                        OutlinedButton(onClick = onAddMember) {
+                            Text("Add first family member")
+                        }
+                    }
+                }
+            } else {
+                val rows = (patients.size + 1) / 2
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.height((rows * 100).dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(patients.size) { i ->
+                        val p = patients[i]
+                        Card {
+                            Column(Modifier.padding(12.dp)) {
+                                Text(p.fullName, style = MaterialTheme.typography.titleSmall)
+                                Text(
+                                    "${p.relationType} · ${p.dateOfBirth.ifBlank { "Age not set" }}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                )
+                            }
                         }
                     }
                 }
@@ -117,13 +141,13 @@ fun HomeScreen(
 
         items(docs.take(3).size) { index ->
             val d = docs[index]
-            DocumentRowCard(d, onOpenDoc)
+            DocumentRowCard(d, patients.firstOrNull { it.id == d.patientId }?.fullName ?: "Unknown member", onOpenDoc)
         }
     }
 }
 
 @Composable
-fun DocumentRowCard(d: MedicalDocumentEntity, onOpenDoc: (Long) -> Unit) {
+fun DocumentRowCard(d: MedicalDocumentEntity, memberName: String, onOpenDoc: (Long) -> Unit) {
     Card(onClick = { onOpenDoc(d.id) }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -131,7 +155,7 @@ fun DocumentRowCard(d: MedicalDocumentEntity, onOpenDoc: (Long) -> Unit) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(d.title, style = MaterialTheme.typography.titleSmall)
-                Text("${d.patientId} · ${d.category}", style = MaterialTheme.typography.bodySmall)
+                Text("$memberName · ${d.category.displayLabel()}", style = MaterialTheme.typography.bodySmall)
                 Text(
                     "${d.clinic} · ${d.documentDate}",
                     style = MaterialTheme.typography.bodySmall,
@@ -139,7 +163,7 @@ fun DocumentRowCard(d: MedicalDocumentEntity, onOpenDoc: (Long) -> Unit) {
                 )
             }
             Text(
-                d.fileType.uppercase(),
+                friendlyFileLabel(d.fileType, d.originalFileName),
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .padding(6.dp),
