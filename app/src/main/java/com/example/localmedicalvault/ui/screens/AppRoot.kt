@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
@@ -108,14 +109,18 @@ fun AppRoot(vm: VaultVM = viewModel()) {
     val docs by vm.allDocs.collectAsState()
 
     Scaffold(bottomBar = { if (selectedDocId == null) BottomNavBar(currentTab) { currentTab = it } }, containerColor = Color(0xFFF8FAFC)) { paddingValues ->
-        Box(modifier = Modifier.padding(paddingValues).fillMaxSize()) {
+        Box(modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .consumeWindowInsets(paddingValues)) {
             if (selectedDocId != null) {
                 DocumentDetailScreen(id = selectedDocId!!, vm = vm, onBack = { selectedDocId = null })
             } else if (showingAddPatientForm) {
                 PatientFormScreen(
                     id = null,
                     vm = vm,
-                    onDone = { showingAddPatientForm = false }
+                    onDone = { showingAddPatientForm = false },
+                    padding = PaddingValues(0.dp)
                 )
             } else {
                 when (currentTab) {
@@ -130,7 +135,7 @@ fun AppRoot(vm: VaultVM = viewModel()) {
                     )
                     "documents" -> DocumentsListScreen(PaddingValues(0.dp), docs, patients, onOpen = { selectedDocId = it })
                     "add" -> AddDocumentWizard(PaddingValues(0.dp), vm, patients, onFinish = { currentTab = "documents" })
-                    "search" -> SearchScreen(PaddingValues(0.dp), vm, docs, onOpen = { selectedDocId = it })
+                    "search" -> SearchScreen(PaddingValues(0.dp), vm, docs, patients, onOpen = { selectedDocId = it })
                     "settings" -> SettingsScreen(PaddingValues(0.dp), vm)
                 }
             }
