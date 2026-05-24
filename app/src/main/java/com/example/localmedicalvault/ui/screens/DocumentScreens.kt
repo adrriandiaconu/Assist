@@ -17,6 +17,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
 import com.example.localmedicalvault.data.local.DocumentCategory
 import com.example.localmedicalvault.data.local.MedicalDocumentEntity
 import com.example.localmedicalvault.data.local.PatientEntity
@@ -130,10 +131,25 @@ fun DocumentDetailScreen(id: Long, vm: VaultVM, onBack: () -> Unit) {
         } }
         Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
             Button(onClick={
-                val mime = if(d.fileType=="pdf") "application/pdf" else "image/*"
-                val intent=Intent(Intent.ACTION_VIEW).apply{ setDataAndType(Uri.fromFile(File(d.localPath)), mime); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-                runCatching{ context.startActivity(intent) }.onFailure {
-                    Toast.makeText(context, "Could not open this file on this device.", Toast.LENGTH_SHORT).show()
+                val file = File(d.localPath)
+                val mime = when (d.fileType.lowercase()) {
+                    "pdf" -> "application/pdf"
+                    "image" -> "image/*"
+                    else -> "*/*"
+                }
+                val uri = runCatching {
+                    FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+                }.getOrElse {
+                    Toast.makeText(context, "No app available to open this document.", Toast.LENGTH_SHORT).show()
+                    return@Button
+                }
+                val intent = Intent(Intent.ACTION_VIEW).apply {
+                    setDataAndType(uri, mime)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                runCatching { context.startActivity(intent) }.onFailure {
+                    Toast.makeText(context, "No app available to open this document.", Toast.LENGTH_SHORT).show()
                 }
             }, modifier=Modifier.weight(1f)){Text("Open")}
             OutlinedButton(onClick={showDeleteConfirm = true}, modifier=Modifier.weight(1f)){Text("Delete")}
