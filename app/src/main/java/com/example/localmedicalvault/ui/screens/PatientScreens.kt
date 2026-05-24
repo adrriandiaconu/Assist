@@ -45,7 +45,7 @@ fun PatientDetailScreen(id: Long, vm: VaultVM, onBack: () -> Unit, onEdit: (Long
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { PrimaryAction("Add document") { onDocs(id) }; SecondaryAction("Add visit") { onVisits(id) } }
         TabRow(selectedTabIndex = tab) { listOf("Documents", "Visits", "Notes").forEachIndexed { i, t -> Tab(selected = tab == i, onClick = { tab = i }, text = { Text(t) }) } }
         when (tab) {
-            0 -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(docs.filter { it.patientId == id }) { d -> InfoCard(d.title, "${d.category} • ${d.documentDate}", trailing = d.fileType.uppercase()) { SecondaryAction("Open") { onOpenDoc(d.id) } } } }
+            0 -> LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) { items(docs.filter { it.patientId == id }) { d -> InfoCard(d.title, "${d.category.displayLabel()} • ${d.documentDate}", trailing = friendlyFileLabel(d.fileType, d.originalFileName)) { SecondaryAction("Open") { onOpenDoc(d.id) } } } }
             1 -> Text("Use Visits section to manage visit timeline.")
             else -> Text(if (p.notes.isBlank()) "No notes yet" else p.notes)
         }

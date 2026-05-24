@@ -141,13 +141,13 @@ fun HomeScreen(
 
         items(docs.take(3).size) { index ->
             val d = docs[index]
-            DocumentRowCard(d, onOpenDoc)
+            DocumentRowCard(d, patients.firstOrNull { it.id == d.patientId }?.fullName ?: "Unknown member", onOpenDoc)
         }
     }
 }
 
 @Composable
-fun DocumentRowCard(d: MedicalDocumentEntity, onOpenDoc: (Long) -> Unit) {
+fun DocumentRowCard(d: MedicalDocumentEntity, memberName: String, onOpenDoc: (Long) -> Unit) {
     Card(onClick = { onOpenDoc(d.id) }) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -155,7 +155,7 @@ fun DocumentRowCard(d: MedicalDocumentEntity, onOpenDoc: (Long) -> Unit) {
         ) {
             Column(Modifier.weight(1f)) {
                 Text(d.title, style = MaterialTheme.typography.titleSmall)
-                Text("${d.patientId} · ${d.category}", style = MaterialTheme.typography.bodySmall)
+                Text("$memberName · ${d.category.displayLabel()}", style = MaterialTheme.typography.bodySmall)
                 Text(
                     "${d.clinic} · ${d.documentDate}",
                     style = MaterialTheme.typography.bodySmall,
@@ -163,7 +163,7 @@ fun DocumentRowCard(d: MedicalDocumentEntity, onOpenDoc: (Long) -> Unit) {
                 )
             }
             Text(
-                d.fileType.uppercase(),
+                friendlyFileLabel(d.fileType, d.originalFileName),
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.secondaryContainer)
                     .padding(6.dp),

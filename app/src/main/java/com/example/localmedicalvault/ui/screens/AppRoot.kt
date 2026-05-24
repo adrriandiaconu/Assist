@@ -135,7 +135,7 @@ fun AppRoot(vm: VaultVM = viewModel()) {
                     )
                     "documents" -> DocumentsListScreen(PaddingValues(0.dp), docs, patients, onOpen = { selectedDocId = it })
                     "add" -> AddDocumentWizard(PaddingValues(0.dp), vm, patients, onFinish = { currentTab = "documents" })
-                    "search" -> SearchScreen(PaddingValues(0.dp), vm, docs, onOpen = { selectedDocId = it })
+                    "search" -> SearchScreen(PaddingValues(0.dp), vm, docs, patients, onOpen = { selectedDocId = it })
                     "settings" -> SettingsScreen(PaddingValues(0.dp), vm)
                 }
             }

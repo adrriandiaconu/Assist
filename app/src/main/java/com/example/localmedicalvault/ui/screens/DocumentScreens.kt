@@ -27,7 +27,7 @@ import java.io.File
     val filtered = docs.filter { filter=="All" || it.category.name==filter || patients.firstOrNull{p->p.id==it.patientId}?.fullName==filter }
     Column(Modifier.padding(padding).padding(16.dp)) { Text("Documents", style=MaterialTheme.typography.headlineSmall); Text("Original files, easy to find", color=MaterialTheme.colorScheme.onSurfaceVariant)
         LazyVerticalGrid(columns=GridCells.Fixed(3), modifier=Modifier.height(80.dp)){ items(filters.size){ i-> FilterChip(selected=filter==filters[i], onClick={filter=filters[i]}, label={Text(filters[i])}) } }
-        LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){ items(filtered){ DocumentRowCard(it,onOpen) } }
+        LazyColumn(verticalArrangement=Arrangement.spacedBy(8.dp)){ items(filtered){ d -> DocumentRowCard(d, patients.firstOrNull { it.id == d.patientId }?.fullName ?: "Unknown member", onOpen) } }
     }
 }
 
@@ -49,16 +49,42 @@ import java.io.File
         Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){ (1..4).forEach{ LinearProgressIndicator(progress={if(step>=it)1f else 0f}, modifier=Modifier.weight(1f)) } }
         when(step){
             1 -> { Text("Who is this for?"); patients.forEach{ p-> ElevatedCard(onClick={patient=p; step=2}){Text(p.fullName, modifier=Modifier.padding(12.dp))} } }
-            2 -> { TextButton(onClick={step=1}){Text("← Back")}; Text("What type of document?"); DocumentCategory.entries.forEach{ c-> OutlinedButton(onClick={cat=c; step=3}){Text(c.name)} } }
+            2 -> { TextButton(onClick={step=1}){Text("← Back")}; Text("What type of document?"); DocumentCategory.entries.forEach{ c-> OutlinedButton(onClick={cat=c; step=3}){Text(c.displayLabel())} } }
             3 -> { TextButton(onClick={step=2}){Text("← Back")}; Text("Add original file"); Button(onClick={picker.launch(arrayOf("image/*","application/pdf","*/*"))}, modifier=Modifier.fillMaxWidth()){Text("Upload PDF / image")}; Button(onClick={step=4}, modifier=Modifier.fillMaxWidth()){Text("Continue")}; Text(name?:"No file selected") }
             4 -> { TextButton(onClick={step=3}){Text("← Back")}; Text("Basic details"); OutlinedTextField(title,{title=it},label={Text("Title")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(clinic,{clinic=it},label={Text("Clinic")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(doctor,{doctor=it},label={Text("Doctor")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(date,{date=it},label={Text("Date")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(notes,{notes=it},label={Text("Notes")}, modifier=Modifier.fillMaxWidth()); Button(onClick={ if(patient!=null && selected!=null){ vm.addDocument(patient!!.id,title.ifBlank{"${cat.name} document"},cat,date,doctor,clinic,"",notes,selected,name); onFinish() } }, modifier=Modifier.fillMaxWidth()){Text("Save document")}}
         }
     }
 }
 
-@Composable fun DocumentDetailScreen(id: Long, vm: VaultVM, onBack: () -> Unit) { val docs by vm.allDocs.collectAsState(); val context = LocalContext.current; val d = docs.firstOrNull { it.id == id } ?: return
-    Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)){ Text("Document", style=MaterialTheme.typography.headlineSmall); Text(d.title, style=MaterialTheme.typography.titleLarge); Text(d.originalFileName)
-        Card{ Column(Modifier.padding(12.dp)){ Text("Member: ${d.patientId}"); Text("Type: ${d.category}"); Text("Date: ${d.documentDate}"); Text("Clinic: ${d.clinic}"); Text("Doctor: ${d.doctorName}"); Text("Source: Original") } }
-        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){ Button(onClick={ val intent=Intent(Intent.ACTION_VIEW).apply{setDataAndType(Uri.fromFile(File(d.localPath)), if(d.fileType=="pdf")"application/pdf" else "*/*"); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)}; runCatching{context.startActivity(intent)}}, modifier=Modifier.weight(1f)){Text("Open")}; OutlinedButton(onClick={}, modifier=Modifier.weight(1f)){Text("Edit")}; OutlinedButton(onClick={vm.deleteDocument(d); onBack()}, modifier=Modifier.weight(1f)){Text("Delete")} }
+@Composable fun DocumentDetailScreen(id: Long, vm: VaultVM, onBack: () -> Unit) {
+    val docs by vm.allDocs.collectAsState()
+    val patients by vm.patients.collectAsState()
+    val context = LocalContext.current
+    val d = docs.firstOrNull { it.id == id } ?: return
+    val memberName = patients.firstOrNull { it.id == d.patientId }?.fullName ?: "Unknown member"
+
+    Column(Modifier.padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)){
+        TextButton(onClick = onBack) { Text("← Back") }
+        Text("Document", style=MaterialTheme.typography.headlineSmall)
+        Text(d.title, style=MaterialTheme.typography.titleLarge)
+        Text(friendlyFileLabel(d.fileType, d.originalFileName), color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Card{ Column(Modifier.padding(12.dp)){
+            Text("Member: $memberName")
+            Text("Type: ${d.category.displayLabel()}")
+            Text("Date: ${d.documentDate}")
+            Text("Clinic: ${d.clinic}")
+            Text("Doctor: ${d.doctorName}")
+            Text("Source: ${friendlyFileLabel(d.fileType, d.originalFileName)}")
+        } }
+        Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+            Button(onClick={
+                val mime = if(d.fileType=="pdf") "application/pdf" else "image/*"
+                val intent=Intent(Intent.ACTION_VIEW).apply{setDataAndType(Uri.fromFile(File(d.localPath)), mime); addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)}
+                runCatching{context.startActivity(intent)}.onFailure {
+                    android.widget.Toast.makeText(context, "Could not open this file on this device.", android.widget.Toast.LENGTH_SHORT).show()
+                }
+            }, modifier=Modifier.weight(1f)){Text("Open")}
+            OutlinedButton(onClick={vm.deleteDocument(d); onBack()}, modifier=Modifier.weight(1f)){Text("Delete")}
+        }
     }
 }
