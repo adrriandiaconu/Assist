@@ -5,6 +5,8 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -33,14 +35,23 @@ import java.io.File
     var step by remember{mutableStateOf(1)}; var patient by remember{mutableStateOf<PatientEntity?>(null)}; var cat by remember{mutableStateOf(DocumentCategory.OTHER)}; var selected by remember{mutableStateOf<Uri?>(null)}; var name by remember{mutableStateOf<String?>(null)}
     var title by remember{mutableStateOf("")}; var clinic by remember{mutableStateOf("")}; var doctor by remember{mutableStateOf("")}; var date by remember{mutableStateOf("")}; var notes by remember{mutableStateOf("")}
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()){ selected=it; name=it?.lastPathSegment }
-    Column(Modifier.padding(padding).padding(16.dp), verticalArrangement=Arrangement.spacedBy(10.dp)) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .navigationBarsPadding()
+            .padding(16.dp),
+        verticalArrangement=Arrangement.spacedBy(10.dp)
+    ) {
         Text("Add document", style=MaterialTheme.typography.headlineSmall); Text("Save the original first", color=MaterialTheme.colorScheme.onSurfaceVariant)
         Row(horizontalArrangement=Arrangement.spacedBy(6.dp)){ (1..4).forEach{ LinearProgressIndicator(progress={if(step>=it)1f else 0f}, modifier=Modifier.weight(1f)) } }
         when(step){
             1 -> { Text("Who is this for?"); patients.forEach{ p-> ElevatedCard(onClick={patient=p; step=2}){Text(p.fullName, modifier=Modifier.padding(12.dp))} } }
             2 -> { TextButton(onClick={step=1}){Text("← Back")}; Text("What type of document?"); DocumentCategory.entries.forEach{ c-> OutlinedButton(onClick={cat=c; step=3}){Text(c.name)} } }
             3 -> { TextButton(onClick={step=2}){Text("← Back")}; Text("Add original file"); Button(onClick={picker.launch(arrayOf("image/*","application/pdf","*/*"))}, modifier=Modifier.fillMaxWidth()){Text("Upload PDF / image")}; Button(onClick={step=4}, modifier=Modifier.fillMaxWidth()){Text("Continue")}; Text(name?:"No file selected") }
-            4 -> { TextButton(onClick={step=3}){Text("← Back")}; Text("Basic details"); OutlinedTextField(title,{title=it},label={Text("Title")}); OutlinedTextField(clinic,{clinic=it},label={Text("Clinic")}); OutlinedTextField(doctor,{doctor=it},label={Text("Doctor")}); OutlinedTextField(date,{date=it},label={Text("Date")}); OutlinedTextField(notes,{notes=it},label={Text("Notes")}); Button(onClick={ if(patient!=null && selected!=null){ vm.addDocument(patient!!.id,title.ifBlank{"${cat.name} document"},cat,date,doctor,clinic,"",notes,selected,name); onFinish() } }, modifier=Modifier.fillMaxWidth()){Text("Save document")}}
+            4 -> { TextButton(onClick={step=3}){Text("← Back")}; Text("Basic details"); OutlinedTextField(title,{title=it},label={Text("Title")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(clinic,{clinic=it},label={Text("Clinic")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(doctor,{doctor=it},label={Text("Doctor")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(date,{date=it},label={Text("Date")}, modifier=Modifier.fillMaxWidth()); OutlinedTextField(notes,{notes=it},label={Text("Notes")}, modifier=Modifier.fillMaxWidth()); Button(onClick={ if(patient!=null && selected!=null){ vm.addDocument(patient!!.id,title.ifBlank{"${cat.name} document"},cat,date,doctor,clinic,"",notes,selected,name); onFinish() } }, modifier=Modifier.fillMaxWidth()){Text("Save document")}}
         }
     }
 }

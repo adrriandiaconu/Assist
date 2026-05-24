@@ -7,6 +7,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
@@ -18,8 +23,17 @@ import com.example.localmedicalvault.ui.components.PrimaryAction
 import com.example.localmedicalvault.ui.components.SecondaryAction
 
 @Composable
-fun PatientFormScreen(id: Long?, vm: VaultVM, onDone: () -> Unit) { var n by remember { mutableStateOf("") }; var dob by remember { mutableStateOf("") }; var notes by remember { mutableStateOf("") }; var rel by remember { mutableStateOf("Child") }; var err by remember{mutableStateOf("")}
-    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) { Text("Patient details", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(n, { n = it }, label = { Text("Full name") }, modifier = Modifier.fillMaxWidth()); OutlinedTextField(dob, { dob = it }, label = { Text("Date of birth") }, modifier = Modifier.fillMaxWidth()); OutlinedTextField(rel, { rel = it }, label = { Text("Relation: Child / Parent / Self / Other") }, modifier = Modifier.fillMaxWidth()); OutlinedTextField(notes, { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth()); if(err.isNotBlank()) Text(err,color=MaterialTheme.colorScheme.error); Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { PrimaryAction("Save") { if(n.isBlank()) err="Name is required" else { vm.addOrUpdatePatient(id, n, dob, notes, rel); onDone() } }; SecondaryAction("Cancel", onClick = onDone) } }
+fun PatientFormScreen(id: Long?, vm: VaultVM, onDone: () -> Unit, padding: PaddingValues = PaddingValues(0.dp)) { var n by remember { mutableStateOf("") }; var dob by remember { mutableStateOf("") }; var notes by remember { mutableStateOf("") }; var rel by remember { mutableStateOf("Child") }; var err by remember{mutableStateOf("")}
+    Column(
+        Modifier
+            .fillMaxSize()
+            .padding(padding)
+            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .navigationBarsPadding()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) { Text("Patient details", style = MaterialTheme.typography.headlineSmall); OutlinedTextField(n, { n = it }, label = { Text("Full name") }, modifier = Modifier.fillMaxWidth()); OutlinedTextField(dob, { dob = it }, label = { Text("Date of birth") }, modifier = Modifier.fillMaxWidth()); OutlinedTextField(rel, { rel = it }, label = { Text("Relation: Child / Parent / Self / Other") }, modifier = Modifier.fillMaxWidth()); OutlinedTextField(notes, { notes = it }, label = { Text("Notes") }, modifier = Modifier.fillMaxWidth()); if(err.isNotBlank()) Text(err,color=MaterialTheme.colorScheme.error); Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { PrimaryAction("Save") { if(n.isBlank()) err="Name is required" else { vm.addOrUpdatePatient(id, n, dob, notes, rel); onDone() } }; SecondaryAction("Cancel", onClick = onDone) } }
 }
 
 @Composable
